@@ -20,7 +20,7 @@ win:
       arch:
         - x64
 nsis:
-  onClick: false
+  oneClick: false
   allowToChangeInstallationDirectory: true
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
