@@ -1,6 +1,6 @@
 {
   "name": "crafops-easyapp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CrafOps Easy Application for Minecraft Developer",
   "main": "./out/main/index.js",
   "author": "@PPekKunGzDev",
