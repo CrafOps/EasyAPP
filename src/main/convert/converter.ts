@@ -63,7 +63,7 @@ export async function processAudio(
         const finalName = prefix ? `${prefix}_${baseName}` : baseName
         const outputFile = path.join(soundsDir, `${finalName}.ogg`)
 
-        ffmpeg.ffprobe(inputFile, (err, metadata) => {
+        ffmpeg.ffprobe(inputFile, (metadata) => {
           const duration = metadata?.format?.duration || 0
           const tick = Math.round((duration + 5) * 20)
 

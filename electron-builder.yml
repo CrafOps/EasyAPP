@@ -1,5 +1,5 @@
 appId: com.crafops.app
-productName: crafops-easyapp
+productName: 'EasyAPP - CrafOps'
 icon: resources/icon.png
 directories:
   buildResources: build
@@ -13,8 +13,9 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: crafops-easyapp
+  executableName: 'EasyAPP - CrafOps'
   icon: resources/icon.ico
+  "target": ["nsis"]
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
