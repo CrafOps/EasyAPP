@@ -3,6 +3,7 @@ import path, { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { processAudio } from './convert/converter'
+import { autoUpdater } from 'electron-updater';
 
 let mainWindow: BrowserWindow | null = null
 
@@ -82,7 +83,7 @@ ipcMain.handle('select-output', async () => {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.crafops.app')
-
+  autoUpdater.checkForUpdatesAndNotify()
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -92,6 +93,18 @@ app.whenReady().then(() => {
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+autoUpdater.on('update-downloaded', () => {
+  autoUpdater.quitAndInstall()
+})
+
+autoUpdater.on('error', (error) => {
+  console.error('AutoUpdater error:', error)
+})
+
+autoUpdater.on('update-not-available', () => {
+  console.log('No update available')
 })
 
 app.on('window-all-closed', () => {
