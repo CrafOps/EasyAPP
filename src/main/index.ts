@@ -7,7 +7,7 @@ import { processAudio } from './convert/converter'
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
-  const width = 1500
+  const width = 650
   const height = 900
 
   mainWindow = new BrowserWindow({

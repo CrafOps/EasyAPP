@@ -50,21 +50,19 @@ export const ConfigPanel = ({
                 onChange={(e) => setAttenuation(Number(e.target.value))}
             />
         </div>
-        <div className="flex items-end pb-0.5">
-            <label className="flex items-center gap-2.5 cursor-pointer group">
-                <div
-                    onClick={() => setStream(!stream)}
-                    className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${stream ? 'bg-[#3a5a3a]' : 'bg-[#222]'
-                        } border ${stream ? 'border-[#4a7a4a]' : 'border-[#333]'}`}
-                >
-                    <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${stream ? 'left-[18px] bg-[#6aaf6a]' : 'left-0.5 bg-[#444]'
+        <div>
+            <span className={labelClass}>Streaming</span>
+            <div className="flex items-center gap-2.5 cursor-pointer h-[38px]" onClick={() => setStream(!stream)}>
+                <div className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${stream ? 'bg-[#4a7a4a]' : 'bg-[#2a2a2a]'
+                    }`}>
+                    <div className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${stream ? 'translate-x-4' : 'translate-x-0'
                         }`} />
                 </div>
                 <span className={`text-[12px] font-mono tracking-wide transition-colors ${stream ? 'text-[#888]' : 'text-[#444]'
                     }`}>
-                    Streaming
+                    {stream ? 'Enabled' : 'Disabled'}
                 </span>
-            </label>
+            </div>
         </div>
     </div>
 )
