@@ -23,6 +23,7 @@ win:
     provider: github
     owner: CrafOps
     repo: EasyAPP
+    releaseType: release
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -56,5 +57,6 @@ publish:
   provider: github
   owner: CrafOps
   repo: EasyAPP
+  releaseType: release
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
