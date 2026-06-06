@@ -2,6 +2,8 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
 
@@ -31,4 +33,10 @@ jobs:
       - name: Build and Publish Installer
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx electron-builder --win --publish always --config electron-builder.yml
+        run: |
+          if ("${{ github.ref }}" -like "refs/tags/*") {
+            npx electron-builder --win --publish always --config electron-builder.yml
+          } else {
+            npx electron-builder --win --publish never --config electron-builder.yml
+          }
+        shell: pwsh
