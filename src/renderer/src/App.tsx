@@ -5,6 +5,7 @@ import { ConverterPage } from './components/layouts/ConverterPage'
 import { BottomNav } from './components/layouts/BottomNav'
 import { LoadplengPage } from './components/layouts/LoadplengPage'
 import { DownloadToast } from './components/DownloadToast'
+import { ResizePage } from './components/layouts/ResizePage'
 
 function App(): JSX.Element {
   const [logs, setLogs] = useState<string[]>([])
@@ -60,6 +61,7 @@ function App(): JSX.Element {
         />
       )}
       {activeTab === 'loadpleng' && (<LoadplengPage />)}
+      {activeTab === 'resizer' && <ResizePage />}
       <DownloadToast />
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>

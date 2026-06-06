@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { processAudio } from './convert/converter'
 import { autoUpdater } from 'electron-updater'
+import { resizeJarTextures } from './resize-tex/fix-texture-ignore'
 
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 app.commandLine.appendSwitch('disable-http-cache')
@@ -115,6 +116,37 @@ ipcMain.handle('select-paths', async (_event, type: 'file' | 'folder' | 'multi')
 ipcMain.handle('select-output', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
   return canceled ? null : filePaths[0]
+})
+
+ipcMain.handle('select-jar', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'JAR Files', extensions: ['jar'] }]
+  })
+  return canceled ? null : filePaths[0]
+})
+
+ipcMain.handle(
+  'resize-textures',
+  async (event, { jarPath, modid, maxSize, resizeThreshold, longRatio }) => {
+    const webContents = event.sender
+    const win = BrowserWindow.fromWebContents(webContents)
+
+    const result = await resizeJarTextures(
+      jarPath,
+      modid,
+      (msg) => {
+        win?.webContents.send('resize-log', msg)
+      },
+      { maxSize, resizeThreshold, longRatio }
+    )
+
+    return result
+  }
+)
+
+ipcMain.on('show-in-folder', (_event, filePath: string) => {
+  shell.showItemInFolder(filePath)
 })
 
 app.whenReady().then(() => {
