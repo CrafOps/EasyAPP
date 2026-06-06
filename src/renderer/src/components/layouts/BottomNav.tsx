@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { JSX } from 'react'
-import { AudioWaveform, Settings, Package, Clock } from 'lucide-react'
+import { AudioWaveform, Settings, Clock, Globe } from 'lucide-react'
 
 interface Tab {
     id: string
@@ -16,7 +16,7 @@ interface BottomNavProps {
 
 const tabs: Tab[] = [
     { id: 'converter', label: 'Converter', icon: <AudioWaveform size={16} /> },
-    { id: 'batch', label: 'Batch', icon: <Package size={16} />, disabled: true },
+    { id: 'loadpleng', label: 'Loadpleng', icon: <Globe size={16} /> },
     { id: 'history', label: 'History', icon: <Clock size={16} />, disabled: true },
     { id: 'settings', label: 'Settings', icon: <Settings size={16} />, disabled: true },
 ]

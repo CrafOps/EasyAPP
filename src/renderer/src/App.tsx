@@ -3,6 +3,8 @@
 import { JSX, useState, useEffect } from 'react'
 import { ConverterPage } from './components/layouts/ConverterPage'
 import { BottomNav } from './components/layouts/BottomNav'
+import { LoadplengPage } from './components/layouts/LoadplengPage'
+import { DownloadToast } from './components/DownloadToast'
 
 function App(): JSX.Element {
   const [logs, setLogs] = useState<string[]>([])
@@ -57,6 +59,8 @@ function App(): JSX.Element {
           logs={logs} isProcessing={isProcessing} onStart={handleStart}
         />
       )}
+      {activeTab === 'loadpleng' && (<LoadplengPage />)}
+      <DownloadToast />
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )

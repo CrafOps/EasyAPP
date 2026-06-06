@@ -3,8 +3,10 @@ import path, { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { processAudio } from './convert/converter'
-import { autoUpdater } from 'electron-updater';
+import { autoUpdater } from 'electron-updater'
 
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
+app.commandLine.appendSwitch('disable-http-cache')
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
@@ -24,10 +26,44 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      webviewTag: true,
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
+
+  mainWindow.webContents.session.on('will-download', (_event, item) => {
+    const fileName = item.getFilename()
+    const totalBytes = item.getTotalBytes()
+
+    mainWindow?.webContents.send('download-start', { fileName, totalBytes })
+
+    item.on('updated', (_e, state) => {
+      if (state === 'progressing') {
+        const received = item.getReceivedBytes()
+        const total = item.getTotalBytes()
+        const percent = total > 0 ? Math.round((received / total) * 100) : 0
+        mainWindow?.webContents.send('download-progress', { fileName, received, total, percent })
+      }
+    })
+
+    item.once('done', (_e, state) => {
+      mainWindow?.webContents.send('download-done', {
+        fileName,
+        state,
+        savePath: item.getSavePath()
+      })
+    })
+  })
+
+  mainWindow.webContents.session.setPermissionRequestHandler(
+    (_webContents, permission, callback) => {
+      const allowed = ['media', 'audioCapture', 'notifications']
+      callback(allowed.includes(permission))
+    }
+  )
+
+  app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()

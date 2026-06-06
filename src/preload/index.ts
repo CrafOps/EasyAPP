@@ -13,7 +13,14 @@ const api = {
     return () => ipcRenderer.removeListener('conversion-log', subscription)
   },
   closeWindow: () => ipcRenderer.send('window-close'),
-  minimizeWindow: () => ipcRenderer.send('window-minimize')
+  minimizeWindow: () => ipcRenderer.send('window-minimize'),
+
+  onDownloadStart: (cb: (data: { fileName: string; totalBytes: number }) => void) => ipcRenderer.on('download-start', (_e, data) => cb(data)),
+  onDownloadProgress: (
+    cb: (data: { fileName: string; received: number; total: number; percent: number }) => void
+  ) => ipcRenderer.on('download-progress', (_e, data) => cb(data)),
+  onDownloadDone: (cb: (data: { fileName: string; state: string; savePath: string }) => void) =>
+    ipcRenderer.on('download-done', (_e, data) => cb(data))
 }
 
 contextBridge.exposeInMainWorld('api', api)
