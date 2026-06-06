@@ -119,7 +119,11 @@ ipcMain.handle('select-output', async () => {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.crafops.app')
-  autoUpdater.checkForUpdatesAndNotify()
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
