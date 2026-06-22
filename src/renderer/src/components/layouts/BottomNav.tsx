@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { JSX } from 'react'
-import { AudioWaveform, Settings, Globe, Layers } from 'lucide-react'
+import { AudioWaveform, Settings, Globe, Layers, Boxes } from 'lucide-react'
 
 interface Tab {
     id: string
@@ -18,6 +18,7 @@ const tabs: Tab[] = [
     { id: 'converter', label: 'Converter', icon: <AudioWaveform size={16} /> },
     { id: 'loadpleng', label: 'Loadpleng', icon: <Globe size={16} /> },
     { id: 'resizer', label: 'Resizer', icon: <Layers size={16} /> },
+    { id: 'image-to-item', label: 'Image > Item', icon: <Boxes size={16} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={16} />, disabled: true },
 ]
 

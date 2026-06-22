@@ -1,10 +1,12 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import path, { join } from 'path'
+import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { processAudio } from './convert/converter'
 import { autoUpdater } from 'electron-updater'
 import { resizeJarTextures } from './resize-tex/fix-texture-ignore'
+import { generateItemFiles } from './image-to-item/image-to-item'
 
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 app.commandLine.appendSwitch('disable-http-cache')
@@ -145,17 +147,30 @@ ipcMain.handle(
   }
 )
 
+ipcMain.handle('generate-items', async (event, { inputPaths, inputMode, outputDir, modid, foodRegistry }) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+
+  let resolvedPaths = inputPaths
+  if (inputMode === 'folder' && inputPaths[0]) {
+    const folderPath = inputPaths[0]
+    resolvedPaths = fs.readdirSync(folderPath)
+      .filter((f: string) => f.endsWith('.png'))
+      .map((f: string) => path.join(folderPath, f))
+  }
+
+  const result = await generateItemFiles(resolvedPaths, outputDir, modid, foodRegistry, (msg) => {
+    win?.webContents.send('item-log', msg)
+  })
+  return result
+})
+
 ipcMain.on('show-in-folder', (_event, filePath: string) => {
   shell.showItemInFolder(filePath)
 })
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.crafops.app')
-
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify()
-  }
-
+  autoUpdater.checkForUpdatesAndNotify()
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })

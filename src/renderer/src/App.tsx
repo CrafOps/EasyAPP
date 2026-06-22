@@ -6,6 +6,7 @@ import { BottomNav } from './components/layouts/BottomNav'
 import { LoadplengPage } from './components/layouts/LoadplengPage'
 import { DownloadToast } from './components/DownloadToast'
 import { ResizePage } from './components/layouts/ResizePage'
+import { ImageToItemPage } from './components/layouts/ImageToItemPage'
 
 function App(): JSX.Element {
   const [logs, setLogs] = useState<string[]>([])
@@ -48,20 +49,23 @@ function App(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] text-[#c0c0c0] font-mono pb-12">
+    <div className="h-screen bg-[#0e0e0e] text-[#c0c0c0] font-mono overflow-hidden">
       {activeTab === 'converter' && (
-        <ConverterPage
-          inputPaths={inputPaths} setInputPaths={setInputPaths}
-          outputDir={outputDir} setOutputDir={setOutputDir}
-          prefix={prefix} setPrefix={setPrefix}
-          modid={modid} setModid={setModid}
-          stream={stream} setStream={setStream}
-          attenuation={attenuation} setAttenuation={setAttenuation}
-          logs={logs} isProcessing={isProcessing} onStart={handleStart}
-        />
+        <div className="h-[calc(100vh-48px)] overflow-y-auto">
+          <ConverterPage
+            inputPaths={inputPaths} setInputPaths={setInputPaths}
+            outputDir={outputDir} setOutputDir={setOutputDir}
+            prefix={prefix} setPrefix={setPrefix}
+            modid={modid} setModid={setModid}
+            stream={stream} setStream={setStream}
+            attenuation={attenuation} setAttenuation={setAttenuation}
+            logs={logs} isProcessing={isProcessing} onStart={handleStart}
+          />
+        </div>
       )}
-      {activeTab === 'loadpleng' && (<LoadplengPage />)}
+      {activeTab === 'loadpleng' && <LoadplengPage />}
       {activeTab === 'resizer' && <ResizePage />}
+      {activeTab === 'image-to-item' && <ImageToItemPage />}
       <DownloadToast />
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>

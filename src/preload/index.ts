@@ -29,7 +29,12 @@ const api = {
   resizeTextures: (config: { jarPath: string; modid: string }) =>
     ipcRenderer.invoke('resize-textures', config),
   showInFolder: (filePath: string) => ipcRenderer.send('show-in-folder', filePath),
-  onResizeLog: (cb: (msg: string) => void) => ipcRenderer.on('resize-log', (_e, msg) => cb(msg))
+  onResizeLog: (cb: (msg: string) => void) => ipcRenderer.on('resize-log', (_e, msg) => cb(msg)),
+
+  // image to item
+  generateItems: (config: object) => ipcRenderer.invoke('generate-items', config),
+  onItemLog: (cb: (msg: string) => void) =>
+    ipcRenderer.on('item-log', (_e, msg) => cb(msg)),
 }
 
 contextBridge.exposeInMainWorld('api', api)
