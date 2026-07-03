@@ -7,6 +7,7 @@ import { processAudio } from './convert/converter'
 import { autoUpdater } from 'electron-updater'
 import { resizeJarTextures } from './resize-tex/fix-texture-ignore'
 import { generateItemFiles } from './image-to-item/image-to-item'
+import { destroyDiscordRPC, initDiscordRPC } from './discord'
 
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 app.commandLine.appendSwitch('disable-http-cache')
@@ -176,6 +177,7 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+  initDiscordRPC()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -196,6 +198,7 @@ autoUpdater.on('update-not-available', () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    destroyDiscordRPC()
     app.quit()
   }
 })
