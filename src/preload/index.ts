@@ -3,7 +3,14 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+const arg = (key: string) =>
+  process.argv.find((a) => a.startsWith(`--${key}=`))?.split('=')[1]
+
 const api = {
+  // window / platform info
+  platform: process.platform,
+  version: arg('easyapp-version') ?? '',
+
   // audio converter
   startConvert: (config: any) => ipcRenderer.invoke('start-conversion', config),
   selectPaths: (type: 'file' | 'folder' | 'multi') => ipcRenderer.invoke('select-paths', type),

@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, nativeTheme } from 'electron'
 import path, { join } from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -13,26 +13,39 @@ app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 app.commandLine.appendSwitch('disable-http-cache')
 let mainWindow: BrowserWindow | null = null
 
+const isWin = process.platform === 'win32'
+const isMac = process.platform === 'darwin'
+
+// ธีมสว่างอย่างเดียว (ขาว-ฟ้า) — ปุ่มหน้าต่างของ Windows ให้กลืนกับ toolbar สีขาว
+const titleBarOverlay: Electron.TitleBarOverlayOptions = {
+  color: '#ffffff',
+  symbolColor: '#5b6472',
+  height: 48
+}
+
 function createWindow(): void {
-  const width = 650
-  const height = 900
+  nativeTheme.themeSource = 'light'
 
   mainWindow = new BrowserWindow({
-    width: width,
-    height: height,
+    width: 1080,
+    height: 720,
+    minWidth: 880,
+    minHeight: 600,
     show: false,
-    frame: true,
-    resizable: false,
-    titleBarStyle: 'default',
+    resizable: true,
+    titleBarStyle: 'hidden',
+    ...(isWin ? { titleBarOverlay } : {}),
+    ...(isMac ? { trafficLightPosition: { x: 16, y: 16 } } : {}),
+    backgroundColor: '#ffffff',
     autoHideMenuBar: true,
-    fullscreenable: false,
     icon: icon,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       webviewTag: true,
       preload: path.join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      additionalArguments: [`--easyapp-version=${app.getVersion()}`]
     }
   })
 

@@ -1,56 +1,145 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
-html {
-  scrollbar-width: thin;
-  scroll-behavior: smooth;
+/* ───────── Tokens: ขาว + ฟ้า (สว่างอย่างเดียว) ─────────
+   - พื้นขาวล้วน, ใช้ฟ้าสีเดียวเป็น accent (มาจากโลโก้)
+   - เทาแบบกลางๆ ไม่อมน้ำเงินหม่น เพื่อให้ฟ้าดูสด */
+:root {
+  --accent: #0f6fec;
+  --accent-hover: #0b5fd0;
+  --accent-soft: #eaf3ff;   /* พื้นฟ้าอ่อนสำหรับรายการที่เลือก */
+  --accent-wash: #f5f9ff;   /* พื้นฟ้าจางมากสำหรับ sidebar / กลุ่ม */
+
+  --window: #ffffff;
+  --sidebar: #f7faff;
+  --workspace: #ffffff;
+  --group: #f7faff;
+  --control: #ffffff;
+  --hover: rgb(15 111 236 / 0.06);
+  --pressed: rgb(15 111 236 / 0.1);
+  --line: #e8eef6;
+  --line-strong: #d5dfeb;
+  --fg: #111418;
+  --fg-2: #5b6472;
+  --fg-3: #9aa3af;
+  --ok: #12a150;
+  --bad: #e5484d;
+  color-scheme: light;
 }
+
+@theme inline {
+  --color-window: var(--window);
+  --color-sidebar: var(--sidebar);
+  --color-workspace: var(--workspace);
+  --color-group: var(--group);
+  --color-control: var(--control);
+  --color-hover: var(--hover);
+  --color-pressed: var(--pressed);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-wash: var(--accent-wash);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Leelawadee UI', 'Noto Sans Thai', system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', 'SF Mono', Consolas, 'Leelawadee UI', ui-monospace, monospace;
+}
+
+html, body, #root { height: 100%; }
 
 body {
-  font-family: 'Space Mono', monospace;
+  margin: 0;
+  overflow: hidden;
+  background: var(--window);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
   user-select: none;
+  cursor: default;
 }
 
+::selection { background: var(--accent-soft); color: var(--fg); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, .12);
+  background: var(--line-strong);
   border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--fg-3); }
+
+/* ลากหน้าต่างได้จาก toolbar / หัว sidebar */
+.drag { -webkit-app-region: drag; }
+.drag :is(button, input, select, a, [role='button'], .no-drag) { -webkit-app-region: no-drag; }
+
+/* เว้นที่ให้ปุ่มหน้าต่างของระบบ */
+html.platform-win32 .toolbar { padding-right: 148px; }
+html.platform-darwin .sidebar-head { padding-left: 84px; }
+
+/* focus ring เดียวกันทั้งแอป */
+@utility focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, .2);
+@layer components {
+  /* ปุ่มหลัก: ฟ้าทึบ */
+  .btn-primary {
+    @apply focus-ring inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent px-3.5
+      text-[13px] font-medium text-white
+      transition-[background-color,transform] duration-150 ease-out
+      hover:bg-accent-hover active:scale-[0.97]
+      disabled:pointer-events-none disabled:bg-line disabled:text-fg-3;
+  }
+
+  /* ปุ่มรอง: ตัวหนังสือฟ้า พื้นใส */
+  .btn {
+    @apply focus-ring inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5
+      text-[13px] font-medium text-accent
+      transition-[background-color,transform] duration-150 ease-out
+      hover:bg-hover active:scale-[0.97] active:bg-pressed
+      disabled:pointer-events-none disabled:text-fg-3;
+  }
+
+  /* ปุ่มไอคอน / ปุ่มเงียบ: ตัวหนังสือเทา */
+  .btn-ghost {
+    @apply focus-ring inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5
+      text-[13px] text-fg-2 transition-[background-color,color,transform] duration-150 ease-out
+      hover:bg-hover hover:text-accent active:scale-[0.97] active:bg-pressed
+      disabled:pointer-events-none disabled:opacity-40;
+  }
+
+  .input {
+    @apply h-8 w-full rounded-lg border border-line bg-control px-2.5 text-[13px] text-fg
+      transition-[border-color,box-shadow] duration-150 outline-none
+      placeholder:text-fg-3 hover:border-line-strong
+      focus:border-accent focus:ring-3 focus:ring-accent/15
+      disabled:opacity-50;
+  }
+
+  .kbd {
+    @apply inline-flex h-5 items-center justify-center rounded-[5px] border border-line bg-white px-1.5
+      font-sans text-[10.5px] text-fg-3;
+  }
+
+  /* กลุ่ม: กล่องฟ้าจาง ไม่มีขอบ */
+  .group-box { @apply overflow-hidden rounded-xl bg-group; }
+  .group-row { @apply flex min-h-13 items-center gap-4 px-4 py-2.5; }
+  .group-row + .group-row { @apply border-t border-line; }
 }
 
-:root {
-  --primary-color: #111111;
-  --secondary-color: #1a1a1a;
-
-  --themewhite: #f5f5f5;
-  --secondarywhite: #8a8a8a;
-
-  --background: #080808;
-
-  color: var(--themewhite);
-
-  background:
-    radial-gradient(circle at top center,
-      rgba(255, 255, 255, 0.04) 0%,
-      transparent 40%),
-    linear-gradient(180deg,
-      #101010 0%,
-      #050505 100%);
-
-  background-attachment: fixed;
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(3px); }
 }
 
-::selection {
-  background: rgba(255, 255, 255, .15);
-  color: #fff;
-}
-
-@theme {
-  --color-primary: #1e293b;
-  --color-secondary: #64748b;
-  --color-themewhite: #f8fafc;
-  --color-secondarywhite: #94a3b8;
-  --color-background: #020617;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

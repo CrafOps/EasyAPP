@@ -1,7 +1,10 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { JSX, useState, useRef, useEffect } from 'react'
-import { ImageIcon, FolderOpen, Files, Play, CheckCircle, Loader, X } from 'lucide-react'
+import { JSX, useState, useEffect } from 'react'
+import { FilePlus2, FolderOpen, FolderPlus, Loader, Play, X } from 'lucide-react'
+import { Logger } from '../convertaudio/Logger'
+import { ToolbarActions } from '../shell/Toolbar'
+import { Group, PathField, Row, StatusLine, Workspace } from '../ui'
 
 type Status = 'idle' | 'processing' | 'done' | 'error'
 type InputMode = 'folder' | 'files'
@@ -15,15 +18,10 @@ export const ImageToItemPage = (): JSX.Element => {
     const [logs, setLogs] = useState<string[]>([])
     const [status, setStatus] = useState<Status>('idle')
     const [stats, setStats] = useState<{ total: number } | null>(null)
-    const logEndRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         ; (window as any).api?.onItemLog?.((msg: string) => {
-            setLogs((prev) => {
-                const next = [...prev, msg]
-                setTimeout(() => logEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-                return next
-            })
+            setLogs((prev) => [...prev, msg])
         })
     }, [])
 
@@ -46,10 +44,6 @@ export const ImageToItemPage = (): JSX.Element => {
     const handleSelectOutput = async (): Promise<void> => {
         const result = await (window as any).api.selectOutput()
         if (result) setOutputDir(result)
-    }
-
-    const handleRemoveFile = (p: string): void => {
-        setInputPaths((prev) => prev.filter((f) => f !== p))
     }
 
     const handleRun = async (): Promise<void> => {
@@ -75,200 +69,91 @@ export const ImageToItemPage = (): JSX.Element => {
         }
     }
 
-    const inputLabel =
-        inputMode === 'folder' && inputPaths[0]
-            ? inputPaths[0].split(/[\\/]/).pop()
-            : inputPaths.length > 0
-                ? `${inputPaths.length} ไฟล์`
-                : null
+    const busy = status === 'processing'
+    const hasInput = inputPaths.length > 0
+    const id = modid || 'modid'
 
     return (
-        <div
-            className="text-[#c0c0c0] font-mono"
-            style={{ height: 'calc(100vh - 48px)', overflowY: 'auto' }}
-        >
-            {/* Header */}
-            <div className="px-5 pt-5 pb-3 border-b border-[#1a1a1a]">
-                <div className="flex items-center gap-2 mb-1">
-                    <ImageIcon size={14} className="text-[#666]" />
-                    <span className="text-[9px] tracking-[0.2em] uppercase text-[#444]">
-                        Image → Item Generator (Food types)
-                    </span>
-                </div>
-                <p className="text-[10px] text-[#333]">แปลง PNG → model JSON + lang + code (Fabric)</p>
-            </div>
-
-            <div className="px-5 py-4 flex flex-col gap-3">
-
-                {/* Input PNG */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] tracking-[0.15em] uppercase text-[#444]">Input PNG</label>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleSelectFolder}
-                            disabled={status === 'processing'}
-                            className={`flex items-center gap-1.5 px-3 py-2 border text-[10px] transition-colors flex-1 disabled:opacity-40
-                ${inputMode === 'folder' && inputPaths.length > 0
-                                    ? 'border-[#333] text-[#888] bg-[#161616]'
-                                    : 'border-[#1e1e1e] text-[#444] bg-[#111] hover:border-[#2a2a2a]'}`}
-                        >
-                            <FolderOpen size={11} />
-                            Folder
-                        </button>
-                        <button
-                            onClick={handleSelectFiles}
-                            disabled={status === 'processing'}
-                            className={`flex items-center gap-1.5 px-3 py-2 border text-[10px] transition-colors flex-1 disabled:opacity-40
-                ${inputMode === 'files' && inputPaths.length > 0
-                                    ? 'border-[#333] text-[#888] bg-[#161616]'
-                                    : 'border-[#1e1e1e] text-[#444] bg-[#111] hover:border-[#2a2a2a]'}`}
-                        >
-                            <Files size={11} />
-                            Multi-file
-                        </button>
-                    </div>
-
-                    {inputPaths.length > 0 && (
-                        <div className="bg-[#0a0a0a] border border-[#161616] p-2 max-h-24 overflow-y-auto">
-                            {inputMode === 'folder' ? (
-                                <p className="text-[10px] text-[#555]">📁 {inputLabel}</p>
-                            ) : (
-                                inputPaths.map((p) => (
-                                    <div key={p} className="flex items-center gap-1 group">
-                                        <span className="text-[9px] text-[#444] truncate flex-1">
-                                            {p.split(/[\\/]/).pop()}
-                                        </span>
-                                        <button
-                                            onClick={() => handleRemoveFile(p)}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X size={9} className="text-[#333] hover:text-[#666]" />
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Output Folder */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] tracking-[0.15em] uppercase text-[#444]">Output Folder</label>
-                    <button
-                        onClick={handleSelectOutput}
-                        disabled={status === 'processing'}
-                        className="flex items-center gap-2 px-3 py-2.5 bg-[#111] border border-[#1e1e1e]
-                       hover:border-[#333] transition-colors text-left disabled:opacity-40"
-                    >
-                        <FolderOpen size={13} className="text-[#555] shrink-0" />
-                        <span className="text-[11px] text-[#666] truncate flex-1">
-                            {outputDir ? outputDir.split(/[\\/]/).pop() : 'เลือก output folder...'}
-                        </span>
-                    </button>
-                </div>
-
-                {/* Mod ID */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] tracking-[0.15em] uppercase text-[#444]">Mod ID</label>
-                    <input
-                        type="text"
-                        value={modid}
-                        onChange={(e) => setModid(e.target.value)}
-                        placeholder="เช่น dimension, mymod, ..."
-                        disabled={status === 'processing'}
-                        className="px-3 py-2.5 bg-[#111] border border-[#1e1e1e] text-[11px] text-[#c0c0c0]
-                       placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#333]
-                       transition-colors disabled:opacity-40 font-mono"
-                    />
-                    {modid && (
-                        <p className="text-[9px] text-[#333]">
-                            layer0: <span className="text-[#555]">{modid}:item/foods/&#123;name&#125;</span>
-                            &nbsp;•&nbsp;lang: <span className="text-[#555]">item.{modid}.&#123;name&#125;</span>
-                        </p>
-                    )}
-                </div>
-
-                {/* Food Registry */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] tracking-[0.15em] uppercase text-[#444]">Food Registry</label>
-                    <input
-                        type="text"
-                        value={foodRegistry}
-                        onChange={(e) => setFoodRegistry(e.target.value)}
-                        disabled={status === 'processing'}
-                        className="px-3 py-2.5 bg-[#111] border border-[#1e1e1e] text-[11px] text-[#c0c0c0]
-                       focus:outline-none focus:border-[#333] transition-colors
-                       disabled:opacity-40 font-mono"
-                    />
-                    <p className="text-[9px] text-[#2a2a2a]">
-                        ใช้ใน: .food(<span className="text-[#444]">{foodRegistry}</span>)
-                    </p>
-                </div>
-
-                {/* Run */}
+        <Workspace>
+            <ToolbarActions>
                 <button
-                    onClick={handleRun}
-                    disabled={status === 'processing' || inputPaths.length === 0 || !outputDir || !modid.trim()}
-                    className="flex items-center justify-center gap-2 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a]
-                     hover:border-[#444] hover:bg-[#222] transition-all text-[#888]
-                     disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="btn-ghost"
+                    onClick={() => (window as any).api.showInFolder(outputDir)}
+                    disabled={!outputDir}
+                    title="เปิดโฟลเดอร์ปลายทาง"
                 >
-                    {status === 'processing' ? (
-                        <>
-                            <Loader size={13} className="animate-spin" />
-                            <span className="text-[10px] tracking-[0.15em] uppercase">Generating...</span>
-                        </>
-                    ) : (
-                        <>
-                            <Play size={13} />
-                            <span className="text-[10px] tracking-[0.15em] uppercase">Generate</span>
-                        </>
-                    )}
+                    <FolderOpen size={15} strokeWidth={1.75} />
                 </button>
+                <button className="btn-primary" onClick={handleRun} disabled={busy || !hasInput || !outputDir || !modid.trim()}>
+                    {busy ? <Loader size={14} className="animate-spin" /> : <Play size={14} />}
+                    {busy ? 'กำลังสร้าง…' : 'สร้างไอเทม'}
+                </button>
+            </ToolbarActions>
 
-                {/* Result */}
-                {status === 'done' && stats && (
-                    <div className="px-3 py-2.5 bg-[#0d1f0d] border border-[#1a3a1a] flex items-center gap-3">
-                        <CheckCircle size={13} className="text-green-600 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-green-700">สร้างแล้ว {stats.total} items</p>
-                            <p className="text-[9px] text-[#2a4a2a] truncate mt-0.5">{outputDir}</p>
-                        </div>
-                        <button
-                            onClick={() => (window as any).api.showInFolder(outputDir)}
-                            className="text-[9px] text-[#2a6a2a] hover:text-green-500 tracking-widest uppercase shrink-0"
-                        >
-                            เปิด
-                        </button>
+            <Group
+                title="ไฟล์ PNG"
+                description="ชื่อไฟล์จะกลายเป็นชื่อไอเทม"
+                actions={
+                    <>
+                        <button className="btn h-7" onClick={handleSelectFiles} disabled={busy}><FilePlus2 size={14} strokeWidth={1.75} />ไฟล์</button>
+                        <button className="btn h-7" onClick={handleSelectFolder} disabled={busy}><FolderPlus size={14} strokeWidth={1.75} />โฟลเดอร์</button>
+                    </>
+                }
+            >
+                {!hasInput ? (
+                    <div className="px-4 py-8 text-center">
+                        <p className="text-[13px] text-fg-2">ยังไม่ได้เลือก</p>
+                        <p className="text-[12px] text-fg-3">เลือกทั้งโฟลเดอร์ หรือเลือกไฟล์ .png ทีละหลายไฟล์</p>
+                    </div>
+                ) : inputMode === 'folder' ? (
+                    <Row label="โฟลเดอร์" hint={inputPaths[0]}>
+                        <button className="btn-ghost h-7" onClick={() => setInputPaths([])}>นำออก</button>
+                    </Row>
+                ) : (
+                    <div className="max-h-56 overflow-y-auto">
+                        <table className="w-full table-fixed border-collapse text-[12.5px]">
+                            <tbody>
+                                {inputPaths.map((p, i) => (
+                                    <tr key={p} className="group border-b border-line last:border-0 transition-colors hover:bg-hover">
+                                        <td className="w-12 py-1.5 pr-2 pl-4 text-right text-fg-3">{i + 1}</td>
+                                        <td className="truncate px-2 py-1.5" title={p}>{p.split(/[\\/]/).pop()}</td>
+                                        <td className="w-10 pr-2">
+                                            <button
+                                                onClick={() => setInputPaths((prev) => prev.filter((f) => f !== p))}
+                                                aria-label="นำออก"
+                                                className="focus-ring rounded-md p-1 text-fg-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-pressed hover:text-bad focus-visible:opacity-100"
+                                            >
+                                                <X size={13} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
+            </Group>
 
-                {/* Console */}
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[9px] tracking-[0.15em] uppercase text-[#333]">Console</span>
-                        {logs.length > 0 && (
-                            <span className="text-[8px] text-[#2a2a2a]">{logs.length} lines</span>
-                        )}
-                    </div>
-                    <div
-                        className="bg-[#080808] border border-[#141414] overflow-y-auto p-3"
-                        style={{ height: '180px' }}
-                    >
-                        {logs.length === 0 ? (
-                            <p className="text-[10px] text-[#1e1e1e]">รอคำสั่ง...</p>
-                        ) : (
-                            logs.map((line, i) => (
-                                <p key={i} className="text-[10px] text-[#4a4a4a] leading-5 font-mono">
-                                    {line}
-                                </p>
-                            ))
-                        )}
-                        <div ref={logEndRef} />
-                    </div>
-                </div>
+            <Group title="การตั้งค่า">
+                <Row label="Mod ID" hint={<span className="font-mono">{id}:item/foods/{'{name}'} · item.{id}.{'{name}'}</span>}>
+                    <input className="input w-56" value={modid} onChange={(e) => setModid(e.target.value)} placeholder="mymod" disabled={busy} />
+                </Row>
+                <Row label="Food registry" hint={<span className="font-mono">.food({foodRegistry})</span>}>
+                    <input className="input w-64 font-mono text-[12px]" value={foodRegistry} onChange={(e) => setFoodRegistry(e.target.value)} disabled={busy} />
+                </Row>
+                <Row label="โฟลเดอร์ผลลัพธ์">
+                    <PathField value={outputDir} placeholder="ยังไม่ได้เลือก" onPick={handleSelectOutput} disabled={busy} />
+                </Row>
+            </Group>
 
-            </div>
-        </div>
+            {status === 'done' && stats && (
+                <StatusLine tone="ok">สร้างแล้ว {stats.total.toLocaleString()} ไอเทม</StatusLine>
+            )}
+            {status === 'error' && <StatusLine tone="bad">เกิดข้อผิดพลาด — ดูรายละเอียดในบันทึก</StatusLine>}
+
+            <Group title="บันทึก">
+                <Logger logs={logs} />
+            </Group>
+        </Workspace>
     )
 }

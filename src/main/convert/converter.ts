@@ -30,8 +30,44 @@ function getAudioFiles(dir: string): string[] {
   return results
 }
 
+// แปลงอักษรไทยเป็นอักษรละติน (แบบประมาณ อิง RTGS) เพราะ Minecraft รับได้แค่ a-z 0-9 _
+const THAI_MAP: Record<string, string> = {
+  ก: 'k', ข: 'kh', ฃ: 'kh', ค: 'kh', ฅ: 'kh', ฆ: 'kh', ง: 'ng', จ: 'ch', ฉ: 'ch', ช: 'ch',
+  ซ: 's', ฌ: 'ch', ญ: 'y', ฎ: 'd', ฏ: 't', ฐ: 'th', ฑ: 'th', ฒ: 'th', ณ: 'n', ด: 'd',
+  ต: 't', ถ: 'th', ท: 'th', ธ: 'th', น: 'n', บ: 'b', ป: 'p', ผ: 'ph', ฝ: 'f', พ: 'ph',
+  ฟ: 'f', ภ: 'ph', ม: 'm', ย: 'y', ร: 'r', ฤ: 'rue', ล: 'l', ฦ: 'lue', ว: 'w', ศ: 's',
+  ษ: 's', ส: 's', ห: 'h', ฬ: 'l', อ: 'o', ฮ: 'h',
+  'ะ': 'a', 'ั': 'a', า: 'a', 'ำ': 'am', 'ิ': 'i', 'ี': 'i', 'ึ': 'ue', 'ื': 'ue', 'ุ': 'u',
+  'ู': 'u', เ: 'e', แ: 'ae', โ: 'o', ใ: 'ai', ไ: 'ai',
+  '๐': '0', '๑': '1', '๒': '2', '๓': '3', '๔': '4', '๕': '5', '๖': '6', '๗': '7', '๘': '8', '๙': '9'
+}
+const THAI_LEADING_VOWELS = new Set(['เ', 'แ', 'โ', 'ใ', 'ไ'])
+const isThaiConsonant = (c: string): boolean => c >= 'ก' && c <= 'ฮ'
+
+function transliterateThai(text: string): string {
+  const out: string[] = []
+  const chars = [...text]
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i]
+    // สระหน้า (เ แ โ ใ ไ) เขียนก่อนพยัญชนะแต่ออกเสียงทีหลัง -> สลับลำดับ
+    if (THAI_LEADING_VOWELS.has(c) && i + 1 < chars.length && isThaiConsonant(chars[i + 1])) {
+      out.push(THAI_MAP[chars[i + 1]], THAI_MAP[c])
+      i++
+    } else if (c === '์') {
+      out.pop() // การันต์: ไม่ออกเสียงตัวก่อนหน้า
+    } else if (c in THAI_MAP) {
+      out.push(THAI_MAP[c])
+    } else if (c >= '฀' && c <= '๿') {
+      // วรรณยุกต์ ไม้ไต่คู้ ๆ ฯ ฯลฯ -> ตัดทิ้ง
+    } else {
+      out.push(c)
+    }
+  }
+  return out.join('')
+}
+
 function sanitizeFilename(filename: string): string {
-  return filename
+  return transliterateThai(filename)
     .toLowerCase()
     .replace(/[,\s-]/g, '_')
     .replace(/[^a-z0-9_]/g, '')
@@ -56,14 +92,24 @@ export async function processAudio(
   let registerContent = ''
   let nameContent = ''
 
+  // ตั้งชื่อให้ครบก่อน เพื่อกันชื่อซ้ำ (ไม่งั้นไฟล์จะทับกัน)
+  const usedNames = new Set<string>()
+  const finalNames = allFiles.map((inputFile, index) => {
+    const baseName = sanitizeFilename(path.parse(inputFile).name) || `sound_${index + 1}`
+    const candidate = prefix ? `${prefix}_${baseName}` : baseName
+    let name = candidate
+    for (let n = 2; usedNames.has(name); n++) name = `${candidate}_${n}`
+    usedNames.add(name)
+    return name
+  })
+
   await Promise.all(
-    allFiles.map((inputFile) => {
+    allFiles.map((inputFile, index) => {
       return new Promise<void>((resolve) => {
-        const baseName = sanitizeFilename(path.parse(inputFile).name)
-        const finalName = prefix ? `${prefix}_${baseName}` : baseName
+        const finalName = finalNames[index]
         const outputFile = path.join(soundsDir, `${finalName}.ogg`)
 
-        ffmpeg.ffprobe(inputFile, (metadata) => {
+        ffmpeg.ffprobe(inputFile, (_err, metadata) => {
           const duration = metadata?.format?.duration || 0
           const tick = Math.round((duration + 5) * 20)
 

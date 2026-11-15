@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSX, useEffect, useState } from 'react'
-import { Download, CheckCircle, XCircle } from 'lucide-react'
 
 interface DownloadItem {
     fileName: string
@@ -44,40 +43,27 @@ export const DownloadToast = (): JSX.Element => {
     if (downloads.length === 0) return <></>
 
     return (
-        <div className="fixed bottom-14 right-3 z-[100] flex flex-col gap-2 w-72">
+        <div className="fixed right-4 bottom-4 z-[100] flex w-80 flex-col gap-2" role="status" aria-live="polite">
             {downloads.map((d) => (
                 <div
                     key={d.fileName}
-                    className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 shadow-xl"
+                    className="animate-[fade-in_160ms_ease-out] rounded-xl border border-line bg-workspace p-3 shadow-lg shadow-black/10"
                 >
-                    {/* Header */}
-                    <div className="flex items-center gap-2 mb-2">
-                        {d.state === 'completed' ? (
-                            <CheckCircle size={14} className="text-green-400 shrink-0" />
-                        ) : d.state === 'error' ? (
-                            <XCircle size={14} className="text-red-400 shrink-0" />
-                        ) : (
-                            <Download size={14} className="text-blue-400 shrink-0 animate-bounce" />
-                        )}
-                        <span className="text-[10px] text-[#aaa] truncate flex-1">{d.fileName}</span>
-                        <span className="text-[10px] text-[#666] shrink-0">{d.percent}%</span>
+                    <div className="flex items-baseline gap-3">
+                        <span className="flex-1 truncate text-[12.5px] font-medium">{d.fileName}</span>
+                        <span className="shrink-0 text-[12px] text-fg-3">
+                            {d.state === 'error' ? 'ล้มเหลว' : `${d.percent}%`}
+                        </span>
                     </div>
-
-                    {/* Progress Bar */}
-                    <div className="h-1 bg-[#2a2a2a] rounded-full overflow-hidden">
+                    <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
                         <div
-                            className={`h-full rounded-full transition-all duration-300 ${d.state === 'completed' ? 'bg-green-500' :
-                                    d.state === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                                }`}
+                            className={`h-full rounded-full transition-[width] duration-300 ease-out ${d.state === 'error' ? 'bg-bad' : d.state === 'completed' ? 'bg-ok' : 'bg-accent'}`}
                             style={{ width: `${d.percent}%` }}
                         />
                     </div>
-
-                    {/* Status */}
-                    <p className="text-[9px] text-[#555] mt-1">
-                        {d.state === 'completed' ? `บันทึกที่: ${d.savePath}` :
-                            d.state === 'error' ? 'ดาวน์โหลดล้มเหลว' : 'กำลังดาวน์โหลด...'}
-                    </p>
+                    {d.state === 'completed' && d.savePath && (
+                        <p className="mt-1.5 truncate text-[11.5px] text-fg-3" title={d.savePath}>{d.savePath}</p>
+                    )}
                 </div>
             ))}
         </div>

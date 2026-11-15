@@ -1,10 +1,10 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSX } from 'react'
-import { FileSelector } from '../convertaudio/FileSelector'
-import { OutputConfig } from '../convertaudio/OutputConfig'
-import { ConversionBtn } from '../convertaudio/ConversionBtn'
+import { FilePlus2, FolderPlus, FolderOpen, Loader, Play, X } from 'lucide-react'
 import { Logger } from '../convertaudio/Logger'
-import { ConfigPanel } from '../convertaudio/ConfigPanel'
+import { ToolbarActions } from '../shell/Toolbar'
+import { Group, PathField, Row, Switch, Workspace } from '../ui'
 
 interface ConverterPageProps {
     inputPaths: string[]
@@ -24,6 +24,15 @@ interface ConverterPageProps {
     onStart: () => void
 }
 
+const api = (): any => (window as any).api
+
+const splitPath = (p: string): { name: string; dir: string; type: string } => {
+    const parts = p.split(/[\\/]/)
+    const name = parts.pop() ?? p
+    const ext = /\.([a-z0-9]+)$/i.exec(name)?.[1]
+    return { name, dir: parts.join('\\'), type: ext ? ext.toUpperCase() : 'โฟลเดอร์' }
+}
+
 export const ConverterPage = ({
     inputPaths, setInputPaths,
     outputDir, setOutputDir,
@@ -34,92 +43,121 @@ export const ConverterPage = ({
     logs, isProcessing, onStart
 }: ConverterPageProps): JSX.Element => {
 
-    const handleRemovePath = (i: number): void =>
-        setInputPaths(inputPaths.filter((_, idx) => idx !== i))
+    const addPaths = async (type: 'multi' | 'folder'): Promise<void> => {
+        const paths: string[] | null = await api().selectPaths(type)
+        if (paths?.length) setInputPaths([...inputPaths, ...paths.filter((p) => !inputPaths.includes(p))])
+    }
+
+    const pickOutput = async (): Promise<void> => {
+        const dir: string | null = await api().selectOutput()
+        if (dir) {
+            try { localStorage.setItem('outDir', dir) } catch { /* ignore */ }
+            setOutputDir(dir)
+        }
+    }
+
+    const canRun = inputPaths.length > 0 && !!outputDir && !isProcessing
+    const sample = `${modid || 'modid'}:${prefix ? `${prefix}_` : ''}ชื่อไฟล์`
 
     return (
-        <div className="max-w-2xl mx-auto px-6 pt-8 pb-6 space-y-8">
+        <Workspace>
+            <ToolbarActions>
+                <button className="btn-ghost" onClick={() => api().showInFolder(outputDir)} disabled={!outputDir} title="เปิดโฟลเดอร์ปลายทาง">
+                    <FolderOpen size={15} strokeWidth={1.75} />
+                </button>
+                <button className="btn-primary" onClick={onStart} disabled={!canRun}>
+                    {isProcessing ? <Loader size={14} className="animate-spin" /> : <Play size={14} />}
+                    {isProcessing ? 'กำลังแปลง…' : 'แปลงไฟล์'}
+                </button>
+            </ToolbarActions>
 
-            <header className="pb-5 border-b border-[#2a2a2a]">
-                <div className="flex items-baseline gap-2">
-                    <span className="text-[13px] text-[#666] tracking-[0.08em] uppercase">Craft Operation Group</span>
-                    <span className="text-[#333]">/</span>
-                    <span className="text-[13px] text-[#aaa] tracking-[0.08em]">Audio Converter for Minecraft</span>
-                </div>
-                <p className="text-[10px] text-[#3a3a3a] tracking-[0.15em] uppercase mt-1">v1.0.0-@PPekKunGzDev</p>
-            </header>
-
-            {/* Section 1 — blue accent */}
-            <section>
-                <p className="text-[10px] text-[#4a90d9] tracking-[0.15em] uppercase mb-3 flex items-center gap-2">
-                    <span className="text-[#4a90d9] font-mono">#1</span>
-                    <span className="text-[#555]">Source Files</span>
-                </p>
-                <FileSelector onAddPaths={(p) => setInputPaths([...inputPaths, ...p])} />
-                {inputPaths.length > 0 && (
-                    <div className="border border-[#2a2a2a] rounded overflow-hidden">
-                        {inputPaths.map((path, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center justify-between px-3 py-2 text-[11px] text-[#888] border-b border-[#222] last:border-0 hover:bg-[#141414] transition-colors"
-                            >
-                                <span className="truncate">{path.split(/[\\/]/).pop()}</span>
-                                <button
-                                    onClick={() => handleRemovePath(i)}
-                                    className="ml-3 text-[#555] hover:text-[#cc6666] transition-colors shrink-0 text-[15px] leading-none"
-                                >×</button>
-                            </div>
-                        ))}
-                        <div className="flex justify-between items-center px-3 py-1.5 bg-[#0d0d0d]">
-                            <span className="text-[10px] text-[#555]">{inputPaths.length} file{inputPaths.length > 1 ? 's' : ''}</span>
-                            <button
-                                onClick={() => setInputPaths([])}
-                                className="text-[10px] text-[#555] hover:text-[#cc6666] cursor-pointer transition-colors"
-                            >clear all</button>
-                        </div>
+            <Group
+                title="ไฟล์ต้นทาง"
+                description="รองรับ .mp3 .wav .m4a .ogg — ชื่อภาษาไทยจะถูกแปลงเป็นอักษรอังกฤษอัตโนมัติ"
+                actions={
+                    <>
+                        {inputPaths.length > 0 && (
+                            <button className="btn-ghost h-7" onClick={() => setInputPaths([])}>ล้างทั้งหมด</button>
+                        )}
+                        <button className="btn h-7" onClick={() => addPaths('multi')}><FilePlus2 size={14} strokeWidth={1.75} />ไฟล์</button>
+                        <button className="btn h-7" onClick={() => addPaths('folder')}><FolderPlus size={14} strokeWidth={1.75} />โฟลเดอร์</button>
+                    </>
+                }
+            >
+                {inputPaths.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                        <p className="text-[13px] text-fg-2">ยังไม่มีไฟล์</p>
+                        <p className="text-[12px] text-fg-3">กด “ไฟล์” หรือ “โฟลเดอร์” เพื่อเพิ่มไฟล์เสียง</p>
+                    </div>
+                ) : (
+                    <div className="max-h-64 overflow-y-auto">
+                        <table className="w-full table-fixed border-collapse text-[12.5px]">
+                            <thead className="sticky top-0 bg-group">
+                                <tr className="border-b border-line text-left text-[11.5px] text-fg-3">
+                                    <th className="w-12 py-2 pr-2 pl-4 text-right font-medium">#</th>
+                                    <th className="px-2 py-2 font-medium">ชื่อ</th>
+                                    <th className="w-[38%] px-2 py-2 font-medium">ตำแหน่ง</th>
+                                    <th className="w-20 px-2 py-2 font-medium">ชนิด</th>
+                                    <th className="w-10" />
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {inputPaths.map((p, i) => {
+                                    const f = splitPath(p)
+                                    return (
+                                        <tr key={p} className="group border-b border-line last:border-0 transition-colors hover:bg-hover">
+                                            <td className="py-1.5 pr-2 pl-4 text-right text-fg-3">{i + 1}</td>
+                                            <td className="truncate px-2 py-1.5" title={f.name}>{f.name}</td>
+                                            <td className="truncate px-2 py-1.5 text-fg-3" title={f.dir}>{f.dir}</td>
+                                            <td className="px-2 py-1.5 text-fg-2">{f.type}</td>
+                                            <td className="pr-2">
+                                                <button
+                                                    onClick={() => setInputPaths(inputPaths.filter((x) => x !== p))}
+                                                    aria-label={`ลบ ${f.name}`}
+                                                    className="focus-ring rounded-md p-1 text-fg-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-pressed hover:text-bad focus-visible:opacity-100"
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 )}
-            </section>
+            </Group>
 
-            {/* Section 2 — amber accent */}
-            <section>
-                <p className="text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2">
-                    <span className="text-[#c8922a] font-mono">#2</span>
-                    <span className="text-[#555]">Configuration</span>
-                </p>
-                <ConfigPanel
-                    prefix={prefix} setPrefix={setPrefix}
-                    modid={modid} setModid={setModid}
-                    stream={stream} setStream={setStream}
-                    attenuation={attenuation} setAttenuation={setAttenuation}
-                />
-            </section>
-
-            {/* Section 3 — green accent */}
-            <section>
-                <p className="text-[10px] tracking-[0.15em] uppercase mb-3 flex items-center gap-2">
-                    <span className="text-[#5a9e6f] font-mono">#3</span>
-                    <span className="text-[#555]">Output</span>
-                </p>
-                <div className="flex items-center justify-between gap-4">
-                    <OutputConfig onDirChange={setOutputDir} />
-                    <ConversionBtn
-                        onStart={onStart}
-                        isProcessing={isProcessing}
-                        disabled={inputPaths.length === 0 || !outputDir}
+            <Group title="การตั้งค่า">
+                <Row label="Mod ID" hint={<span className="font-mono">{sample}</span>}>
+                    <input className="input w-56" value={modid} placeholder="dimension" onChange={(e) => setModid(e.target.value)} />
+                </Row>
+                <Row label="Prefix" hint="นำหน้าชื่อเสียงทุกไฟล์ (ไม่บังคับ)">
+                    <input className="input w-56" value={prefix} placeholder="ไม่มี" onChange={(e) => setPrefix(e.target.value)} />
+                </Row>
+                <Row label="Attenuation distance" hint="ระยะที่ได้ยินเสียง (บล็อก)">
+                    <input
+                        type="number"
+                        min={1}
+                        className="input w-24 text-right"
+                        value={attenuation}
+                        onChange={(e) => setAttenuation(Number(e.target.value))}
                     />
-                </div>
-            </section>
+                </Row>
+                <Row label="Streaming" hint="แนะนำให้เปิดสำหรับไฟล์ที่ยาว เช่น เพลง">
+                    <Switch checked={stream} onChange={setStream} label="Streaming" />
+                </Row>
+            </Group>
 
-            {/* Console — muted */}
-            <section>
-                <p className="text-[10px] tracking-[0.15em] uppercase mb-2 flex items-center gap-2">
-                    <span className="text-[#555] font-mono">—</span>
-                    <span className="text-[#555]">Console</span>
-                </p>
+            <Group title="ปลายทาง">
+                <Row label="โฟลเดอร์ผลลัพธ์" hint="สร้าง sounds/, sound.txt, code_register.txt">
+                    <PathField value={outputDir} placeholder="ยังไม่ได้เลือก" onPick={pickOutput} />
+                </Row>
+            </Group>
+
+            <Group title="บันทึก">
                 <Logger logs={logs} />
-            </section>
-
-        </div>
+            </Group>
+        </Workspace>
     )
 }
