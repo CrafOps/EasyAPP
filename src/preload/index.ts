@@ -11,6 +11,16 @@ const api = {
   platform: process.platform,
   version: arg('easyapp-version') ?? '',
 
+  // auto update
+  updateGetStatus: () => ipcRenderer.invoke('update-get-status'),
+  updateCheck: () => ipcRenderer.invoke('update-check'),
+  updateInstall: () => ipcRenderer.send('update-install'),
+  onUpdateStatus: (cb: (status: any) => void) => {
+    const sub = (_e: IpcRendererEvent, s: any) => cb(s)
+    ipcRenderer.on('update-status', sub)
+    return () => ipcRenderer.removeListener('update-status', sub)
+  },
+
   // audio converter
   startConvert: (config: any) => ipcRenderer.invoke('start-conversion', config),
   selectPaths: (type: 'file' | 'folder' | 'multi') => ipcRenderer.invoke('select-paths', type),

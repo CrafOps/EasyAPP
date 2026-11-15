@@ -10,6 +10,16 @@ export interface ConversionConfig {
   modid: string
   stream: boolean
   attenuationDistance: number
+  /** สร้าง export_song_title.json (ชื่อที่แปลงแล้ว → ชื่อเพลงต้นฉบับ) */
+  exportSongTitle?: boolean
+  /** path ที่คั่นระหว่าง modid กับชื่อเสียงใน key เช่น "server/" */
+  songTitlePath?: string
+}
+
+/** "server" | "/server/" | "server/" -> "server/", "" -> "" */
+function normalizeKeyPath(p = ''): string {
+  const trimmed = p.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+  return trimmed ? `${trimmed}/` : ''
 }
 
 const pathToFfmpeg = ffmpegStatic || ''
@@ -103,6 +113,8 @@ export async function processAudio(
     return name
   })
 
+  const converted: boolean[] = allFiles.map(() => false)
+
   await Promise.all(
     allFiles.map((inputFile, index) => {
       return new Promise<void>((resolve) => {
@@ -134,6 +146,7 @@ export async function processAudio(
               registerContent += `\tpublic static final SoundEvent ${constantName} = registerSoundEvent("${finalName}");\n`
               nameContent += `/playsound @s ${modid}:${finalName} master @s | Tick ${tick}\n`
 
+              converted[index] = true
               onProgress(`เสร็จสิ้น: sounds/${finalName}.ogg`)
               resolve()
             })
@@ -150,6 +163,17 @@ export async function processAudio(
   fs.writeFileSync(path.join(outputDir, 'sound.txt'), soundContent)
   fs.writeFileSync(path.join(outputDir, 'code_register.txt'), registerContent)
   fs.writeFileSync(path.join(outputDir, 'name_playsound.txt'), nameContent)
+
+  if (config.exportSongTitle) {
+    // เรียงตามลำดับไฟล์ต้นทาง (ไม่ใช่ลำดับที่แปลงเสร็จ) และใส่เฉพาะไฟล์ที่แปลงสำเร็จ
+    const keyPath = normalizeKeyPath(config.songTitlePath)
+    const titles: Record<string, string> = {}
+    allFiles.forEach((inputFile, index) => {
+      if (converted[index]) titles[`${modid}:${keyPath}${finalNames[index]}`] = path.parse(inputFile).name
+    })
+    fs.writeFileSync(path.join(outputDir, 'export_song_title.json'), JSON.stringify(titles, null, 2) + '\n', 'utf8')
+    onProgress(`สร้าง export_song_title.json (${Object.keys(titles).length} เพลง)`)
+  }
 
   onProgress('การประมวลผลทั้งหมดเสร็จสมบูรณ์!')
 }

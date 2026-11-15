@@ -4,7 +4,7 @@ import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { processAudio } from './convert/converter'
-import { autoUpdater } from 'electron-updater'
+import { initAutoUpdater } from './updater'
 import { resizeJarTextures } from './resize-tex/fix-texture-ignore'
 import { generateItemFiles } from './image-to-item/image-to-item'
 import { destroyDiscordRPC, initDiscordRPC } from './discord'
@@ -184,29 +184,17 @@ ipcMain.on('show-in-folder', (_event, filePath: string) => {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.crafops.app')
-  autoUpdater.checkForUpdatesAndNotify()
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
   createWindow()
+  initAutoUpdater(() => mainWindow)
   initDiscordRPC()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
-})
-
-autoUpdater.on('update-downloaded', () => {
-  autoUpdater.quitAndInstall()
-})
-
-autoUpdater.on('error', (error) => {
-  console.error('AutoUpdater error:', error)
-})
-
-autoUpdater.on('update-not-available', () => {
-  console.log('No update available')
 })
 
 app.on('window-all-closed', () => {

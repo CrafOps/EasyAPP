@@ -3,6 +3,7 @@
 import { JSX } from 'react'
 import logo from '../../assets/logo.png'
 import { TOOLS, ToolId, matchTool } from './tools'
+import { UpdateFooter } from './UpdateFooter'
 
 interface SidebarProps {
     active: ToolId
@@ -48,7 +49,7 @@ export const Sidebar = ({ active, query, onSelect }: SidebarProps): JSX.Element 
                 )}
             </nav>
 
-            {version && <p className="px-5 py-4 text-[11px] text-fg-3">v{version}</p>}
+            <UpdateFooter version={version} />
         </aside>
     )
 }

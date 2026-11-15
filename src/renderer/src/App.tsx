@@ -11,15 +11,24 @@ import { Toolbar } from './components/shell/Toolbar'
 import { ToolbarSlotContext } from './components/shell/toolbarSlot'
 import { TOOLS, ToolId, matchTool } from './components/shell/tools'
 
-const savedOutDir = (): string => {
-  try { return localStorage.getItem('outDir') ?? '' } catch { return '' }
+const load = (key: string, fallback: string): string => {
+  try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
+}
+const save = (key: string, value: string): void => {
+  try { localStorage.setItem(key, value) } catch { /* ignore */ }
 }
 
 function App(): JSX.Element {
   const [logs, setLogs] = useState<string[]>([])
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
   const [inputPaths, setInputPaths] = useState<string[]>([])
-  const [outputDir, setOutputDir] = useState<string>(savedOutDir)
+  const [outputDir, setOutputDir] = useState<string>(() => load('outDir', ''))
+  const [exportSongTitle, setExportSongTitle] = useState<boolean>(() => load('exportSongTitle', '0') === '1')
+  const [songTitlePath, setSongTitlePath] = useState<string>(() => load('songTitlePath', 'server/'))
+
+  // จำค่า export song title ไว้ใช้ครั้งถัดไป
+  useEffect(() => save('exportSongTitle', exportSongTitle ? '1' : '0'), [exportSongTitle])
+  useEffect(() => save('songTitlePath', songTitlePath), [songTitlePath])
   const [prefix, setPrefix] = useState<string>('')
   const [modid, setModid] = useState<string>('dimension')
   const [stream, setStream] = useState<boolean>(true)
@@ -68,7 +77,8 @@ function App(): JSX.Element {
     setLogs([])
     try {
       await (window as any).api.startConvert({
-        inputPaths, outputDir, prefix, modid, stream, attenuationDistance: attenuation
+        inputPaths, outputDir, prefix, modid, stream, attenuationDistance: attenuation,
+        exportSongTitle, songTitlePath
       })
       setLogs((prev) => [...prev, 'สำเร็จ!'])
     } catch (err: any) {
@@ -117,6 +127,8 @@ function App(): JSX.Element {
                 modid={modid} setModid={setModid}
                 stream={stream} setStream={setStream}
                 attenuation={attenuation} setAttenuation={setAttenuation}
+                exportSongTitle={exportSongTitle} setExportSongTitle={setExportSongTitle}
+                songTitlePath={songTitlePath} setSongTitlePath={setSongTitlePath}
                 logs={logs} isProcessing={isProcessing} onStart={handleStart}
               />
             )}

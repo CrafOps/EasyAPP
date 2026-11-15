@@ -19,6 +19,10 @@ interface ConverterPageProps {
     setStream: (v: boolean) => void
     attenuation: number
     setAttenuation: (v: number) => void
+    exportSongTitle: boolean
+    setExportSongTitle: (v: boolean) => void
+    songTitlePath: string
+    setSongTitlePath: (v: string) => void
     logs: string[]
     isProcessing: boolean
     onStart: () => void
@@ -40,6 +44,8 @@ export const ConverterPage = ({
     modid, setModid,
     stream, setStream,
     attenuation, setAttenuation,
+    exportSongTitle, setExportSongTitle,
+    songTitlePath, setSongTitlePath,
     logs, isProcessing, onStart
 }: ConverterPageProps): JSX.Element => {
 
@@ -58,6 +64,8 @@ export const ConverterPage = ({
 
     const canRun = inputPaths.length > 0 && !!outputDir && !isProcessing
     const sample = `${modid || 'modid'}:${prefix ? `${prefix}_` : ''}ชื่อไฟล์`
+    const keyPath = songTitlePath.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+    const titleKeySample = `${modid || 'modid'}:${keyPath ? `${keyPath}/` : ''}${prefix ? `${prefix}_` : ''}ชื่อไฟล์`
 
     return (
         <Workspace>
@@ -153,6 +161,22 @@ export const ConverterPage = ({
                 <Row label="โฟลเดอร์ผลลัพธ์" hint="สร้าง sounds/, sound.txt, code_register.txt">
                     <PathField value={outputDir} placeholder="ยังไม่ได้เลือก" onPick={pickOutput} />
                 </Row>
+                <Row label="Export song title" hint="สร้าง export_song_title.json — จับคู่ชื่อที่แปลงแล้วกับชื่อเพลงต้นฉบับ">
+                    <Switch checked={exportSongTitle} onChange={setExportSongTitle} label="Export song title" />
+                </Row>
+                {exportSongTitle && (
+                    <Row
+                        label="Key path"
+                        hint={<span className="font-mono">&quot;{titleKeySample}&quot;: &quot;ชื่อเพลงต้นฉบับ&quot;</span>}
+                    >
+                        <input
+                            className="input w-56 font-mono text-[12px]"
+                            value={songTitlePath}
+                            placeholder="ไม่มี"
+                            onChange={(e) => setSongTitlePath(e.target.value)}
+                        />
+                    </Row>
+                )}
             </Group>
 
             <Group title="บันทึก">
